@@ -1,0 +1,299 @@
+import openpyxl
+from openpyxl import Workbook
+from openpyxl.styles import Font, Color , PatternFill , colors
+from openpyxl.styles.colors import YELLOW,BLUE
+from openpyxl.styles import Alignment  
+from openpyxl.styles.borders import Border, Side
+import datetime
+import sys
+import os.path
+
+"""
+usage : python_file input_file_path
+
+sample: 
+MAS_Rpt.py "C:\\Python27\\coding_mine\\MAS_Files\\MAS_A.xlsx"
+
+"""
+
+## checking argument count
+if (len(sys.argv)) < 2:
+    print ("less arguments passed. Exiting..")
+    exit()
+
+# File path is part of argument
+path = sys.argv[1]
+print path
+
+
+if os.path.isfile(path) == False:
+    print ("File does not exist. Exiting..")
+    exit()
+
+"""
+# Give the location of the file
+path = "C:\\Python27\\coding_mine\\MAS_Files\\MAS_A.xlsx"
+"""
+
+# To open the workbook  # workbook object is created
+wb_obj = openpyxl.load_workbook(path)
+ 
+# Get workbook active sheet object # from the active attribute
+sheet_obj = wb_obj.active
+ 
+# Cell object is created by using  # sheet object's cell() method.
+cell_obj = sheet_obj.cell(row = 1, column = 1)
+ 
+ # if logic already implemented , then exit 
+if sheet_obj.cell(row = 1, column = 2).value == 'Y':
+    print(sheet_obj.cell(row = 1, column = 2).value)
+    print (" Logic already implemented")
+    exit()
+
+max_row_value = sheet_obj.max_row
+max_col_value = sheet_obj.max_column
+
+# font color and font pattern
+#ws = wb_obj['Sheet1']
+ws = wb_obj.worksheets[0]
+
+#getting Report name
+Rpt_name = ws.cell(row=9, column=9).value
+
+#setting blue color to text before header line
+for rows in ws.iter_cols(min_col=1, max_col=7, min_row=1, max_row=7):
+    for cell in rows:
+        cell.font = Font(color='000000FF', bold=True)
+# Assign row 7 value to row 10        
+ws.cell(row=10, column=1).value = ws.cell(row=7, column=1).value   
+
+# Assigning F1 value to G1
+ws.cell(row=1, column=7).value = ws.cell(row=1, column=6).value 
+ws.cell(row=1, column=6).value =""
+
+# Assigning F5 value to G4 and change date format as DD/MM/YYYY as per URS
+ws.cell(row=4, column=7).value=datetime.datetime.strptime(str(ws.cell(row=5, column=6).value), "%Y-%m-%d %H:%M:%S")
+ws.cell(row=4, column=7).number_format = 'DD/MM/YYYY'
+
+
+ws['A10'].font = Font(bold=True)
+
+
+# only for Report B
+if Rpt_name == "B":
+    ws.insert_rows(11)
+
+
+# change whole excel backgroud to white
+for rows in ws.iter_cols(min_col=1, max_col=max_col_value+5, min_row=1, max_row=max_row_value+10):
+    for cell in rows:
+        cell.fill = PatternFill(fgColor="FFFFFF", fill_type = "solid")
+
+# table matrix
+thin_border_blue = Border(left=Side(style='thin',color='000000FF'), 
+                     right=Side(style='thin',color='000000FF'), 
+                     top=Side(style='thin',color='000000FF'), 
+                     bottom=Side(style='thin',color='000000FF')
+                     )
+                   
+thin_border_black = Border(left=Side(style='thin',color='00000000'), 
+                     right=Side(style='thin',color='00000000'), 
+                     top=Side(style='thin',color='00000000'), 
+                     bottom=Side(style='thin',color='00000000')
+                     )
+
+thin_border_white = Border(left=Side(style='thin',color='FFFFFFFF'), 
+                     right=Side(style='thin',color='FFFFFFFF'), 
+                     top=Side(style='thin',color='FFFFFFFF'), 
+                     bottom=Side(style='thin',color='FFFFFFFF')
+                     )
+
+border_none = Border(left=Side(style=None,color='FFFFFFFF'), 
+                     right=Side(style=None,color='FFFFFFFF'), 
+                     top=Side(style=None,color='FFFFFFFF'), 
+                     bottom=Side(style=None,color='FFFFFFFF')
+                     )
+border_total = Border(left=Side(border_style=None,color='FF000000'),
+                right=Side(border_style=None,color='FF000000'),
+                top=Side(border_style="thin",color='FF000000'),
+                bottom=Side(border_style="double",color='FF000000'),
+                diagonal=Side(border_style=None,color='FF000000'),
+                diagonal_direction=0,
+                outline=Side(border_style=None,color='FF000000'),
+                vertical=Side(border_style=None,color='FF000000'),
+                horizontal=Side(border_style=None,color='FF000000')
+               )
+ 
+ # set the height of the row for header
+ws.row_dimensions[5].height = 70
+ws.row_dimensions[5].wrap_text = True
+
+# setting the width for all columns
+ws.column_dimensions['A'].width = 35
+ws.column_dimensions['B'].width = 20
+ws.column_dimensions['C'].width = 20
+ws.column_dimensions['D'].width = 20
+ws.column_dimensions['E'].width = 20
+ws.column_dimensions['F'].width = 20
+ws.column_dimensions['G'].width = 20
+ws.column_dimensions['H'].width = 20
+
+ 
+ # assing Border for those columns which are having sort value 
+#for row in ws['D1:D100']:
+for row in ws.iter_cols(min_col=2, max_col=2, min_row=1, max_row=max_row_value):
+    for cell in row:
+        if cell.value:
+            for srow in ws.iter_cols(min_col=1, max_col=max_col_value-2, min_row=cell.row, max_row=cell.row):
+                for scell in srow:
+                    if cell.row == 9:
+                        scell.border = thin_border_black
+                    elif (ws.cell(row=cell.row, column=max_col_value).value < 100000):
+                        if Rpt_name == "B":
+                            scell.border = thin_border_black
+                        else:   
+                            scell.border = thin_border_blue
+                        
+ 
+# assign customized border for total exposure columns with sorting value > 100000
+#for row in ws['D10:D100']:
+for row in ws.iter_cols(min_col=9, max_col=9, min_row=10, max_row=max_row_value):
+    for cell in row:
+        if cell.value:
+            ctr = 0
+            for srow in ws.iter_cols(min_col=1, max_col=cell.column-3, min_row=cell.row, max_row=cell.row):
+                for scell in srow:
+                    if (cell.value > 100000):
+                        scell.font = Font(bold=True)
+                        ws.cell(row=cell.row, column=cell.column-2).value =""
+                        if scell.column>1:
+                            scell.border = border_total
+                        else:
+                            scell.border = border_none
+                        if ctr==0:
+                            ws.insert_rows(cell.row+1)
+                            ctr=1
+
+
+# setting columns borders as white which comes after the sort columns
+#for row in ws['D10:D100']:
+for row in ws.iter_cols(min_col=9, max_col=9, min_row=10, max_row=max_row_value):
+    for cell in row:
+        if cell.value>100000:
+            for srow in ws.iter_cols(min_col=1, max_col=cell.column-1, min_row=cell.row+1, max_row=cell.row+1):
+                for scell in srow:
+                    scell.border = thin_border_white
+                        
+
+ 
+#replacing 0 with hyphen (-)
+for row in ws.iter_cols(min_col=2, max_col=max_col_value-1, min_row=16, max_row=max_row_value):
+    for cell in row:
+        if (cell.value == 0):
+                cell.value='-'
+                cell.alignment = Alignment(horizontal='right')
+                
+                
+
+
+#Assign font type as  bold to column A text
+#for row in ws['A12:A100']:
+for row in ws.iter_cols(min_col=1, max_col=1, min_row=12, max_row=max_row_value):
+    for cell in row:
+        if cell.value:
+            for srow in ws.iter_cols(min_col=max_col_value, max_col=max_col_value, min_row=cell.row, max_row=cell.row):
+                for scell in srow:
+                    if not (scell.value):
+                        cell.font = Font(bold=True)
+                    elif cell.value == 'Additional Information':
+                        cell.font = Font(bold=True)
+
+
+if not (Rpt_name == 'B'):
+    str_cnt=0
+    sub_str1 = '*'
+    sub_str2 = '('
+
+# if borrower name does not contains * at the end, then erase the footer line
+    for row in ws.iter_cols(min_col=1, max_col=1, min_row=12, max_row=max_row_value):
+        for cell in row:
+            if cell.value:
+                main_string = cell.value
+            if main_string.find(sub_str1)>0:
+                str_cnt=str_cnt+1
+            if main_string.find(sub_str2)>=0 and str_cnt ==1:
+                cell.value=''
+                         
+Center_alignment_obj = cell.alignment.copy(horizontal='center', vertical='top',wrap_text=True)
+
+
+#Background color for header
+for rows in ws.iter_cols(min_col=1, max_col=max_col_value-2, min_row=9, max_row=9):
+    for cell in rows:
+        cell.fill = PatternFill(fgColor="B0B0B0", fill_type = "solid")
+        if cell.column == 1:
+            cell.alignment = Alignment(horizontal='left', vertical='top')
+        else:
+            cell.alignment = Center_alignment_obj
+       
+
+# insert new row  
+ws.insert_rows(10)
+
+#assign Grey color to newly added row
+for rows in ws.iter_cols(min_col=1, max_col=max_col_value-2, min_row=10, max_row=10):
+    for cell in rows:
+       cell.fill = PatternFill(fgColor="808080", fill_type = "solid")
+
+
+# change tab name in excel
+ws.title = "Group"+ws.cell(row=9, column=9).value 
+
+
+# making Column H and I values as blank and fill color with white
+if Rpt_name == 'B':
+    for row in ws.iter_cols(min_col=max_col_value-1, max_col=max_col_value+1, min_row=1, max_row=max_row_value+5):
+        for cell in row:
+            cell.value=''
+            cell.fill = PatternFill(fgColor="FFFFFF", fill_type = "solid")        
+else:
+    for row in ws.iter_cols(min_col=max_col_value-1, max_col=max_col_value, min_row=1, max_row=max_row_value+4):
+        for cell in row:
+            cell.value=''
+            cell.fill = PatternFill(fgColor="FFFFFF", fill_type = "solid")        
+                
+
+
+# making Column G cell alignment as center
+for row in ws.iter_cols(min_col=max_col_value-2, max_col=max_col_value-2, min_row=1, max_row=max_row_value):
+    for cell in row:
+        if cell.row < 7:
+            cell.alignment = Alignment(horizontal='right')
+        else:
+            cell.alignment = Alignment(horizontal='center', vertical= 'top')
+                
+
+# printer setup options
+ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+ws.page_setup.paperSize = ws.PAPERSIZE_A3
+
+
+#delete the unnecessary rows as per URS
+for i in range(0,4):
+    ws.delete_rows(5) 
+
+
+# assing B1 cell value as Y - logic to make sure formatting applied only once on a given file
+for rows in ws.iter_cols(min_col=2, max_col=2, min_row=1, max_row=1):
+    for cell in rows:
+        cell.value = 'Y'
+        cell.font = Font(color='FFFFFFFF')
+
+print (" Logic implemented successfully")
+
+#keep cursor at A1 cell
+ws.cell(row=1, column=1)
+#ws.views.sheetView[0].selection[0].activeCell = 'A1'
+#ws.sheet_view.selection[0].activeCell = 'A1'
+
+wb_obj.save(path)
